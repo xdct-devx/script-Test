@@ -5,11 +5,10 @@ Ainlock โง่ๆ กากๆ  For Pc
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Owen-devx/script-Test/refs/heads/main/AimLock"))()
 ]]--
 
-
-
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+
 local player = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 local mouse = player:GetMouse()
@@ -27,42 +26,69 @@ local rainbowFOVEnabled = false
 local rainbowTextEnabled = false
 local rainbowHue = 0
 
--- ESP Settings
+-- Upgraded ESP Settings
 local espEnabled = false
-local espColor = Color3.fromRGB(255, 50, 50)   -- สีแดงเริ่มต้น
+local espChams = true        -- NEW: เปิด/ปิด การถมสีตัวละคร (Highlight)
+local espTracers = true      -- NEW: เปิด/ปิด เส้นลากจากด้านล่างจอ
+local useTeamColor = true     -- NEW: เปิด/ปิด ให้สี ESP เปลี่ยนตามทีม
+local espColor = Color3.fromRGB(255, 60, 60)
 local showHealth = true
 local showDistance = true
 local showName = true
 
 -- Connections
-local fovConnection, aimlockConnection, espConnection = nil, nil, nil
+local fovConnection, aimlockConnection = nil, nil
 local fovCircle, fovGui = nil, nil
 
--- GUI
+-- Modern GUI Setup (Dark Cyberpunk Theme)
 local screenGui = Instance.new("ScreenGui")
 screenGui.Parent = game:GetService("CoreGui")
-screenGui.Name = "AimlockMenu"
+screenGui.Name = "PremiumAimlockMenu"
 screenGui.DisplayOrder = 10
 screenGui.ResetOnSpawn = false
 screenGui.Enabled = false
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 220, 0, 520)
-frame.Position = UDim2.new(0.05, 0, 0.05, 0)
-frame.BackgroundColor3 = Color3.fromRGB(50,50,50)
-frame.BackgroundTransparency = 0.3
+frame.Size = UDim2.new(0, 240, 0, 610) -- Expanded for new features
+frame.Position = UDim2.new(0.05, 0, 0.1, 0)
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+frame.BackgroundTransparency = 0.15
 frame.BorderSizePixel = 0
 frame.Parent = screenGui
 
+-- Add UI Corner and Stroke for sleek look
+local frameCorner = Instance.new("UICorner")
+frameCorner.CornerRadius = UDim.new(0, 8)
+frameCorner.Parent = frame
+
+local frameStroke = Instance.new("UIStroke")
+frameStroke.Color = Color3.fromRGB(55, 55, 65)
+frameStroke.Thickness = 1.5
+frameStroke.Parent = frame
+
+local function styleElement(element, radius, strokeColor)
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, radius)
+    corner.Parent = element
+    
+    if strokeColor then
+        local stroke = Instance.new("UIStroke")
+        stroke.Color = strokeColor
+        stroke.Thickness = 1
+        stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        stroke.Parent = element
+    end
+end
+
 local function createLabel(text, posY)
     local lbl = Instance.new("TextLabel")
-    lbl.Size = UDim2.new(0, 200, 0, 20)
+    lbl.Size = UDim2.new(0, 220, 0, 20)
     lbl.Position = UDim2.new(0, 10, 0, posY)
     lbl.BackgroundTransparency = 1
-    lbl.TextColor3 = Color3.fromRGB(255,255,255)
+    lbl.TextColor3 = Color3.fromRGB(200, 200, 210)
     lbl.Text = text
-    lbl.Font = Enum.Font.SourceSans
-    lbl.TextSize = 14
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextSize = 13
     lbl.TextXAlignment = Enum.TextXAlignment.Left
     lbl.Parent = frame
     return lbl
@@ -70,86 +96,98 @@ end
 
 local function createButton(text, posY)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0, 200, 0, 30)
+    btn.Size = UDim2.new(0, 220, 0, 28)
     btn.Position = UDim2.new(0, 10, 0, posY)
-    btn.BackgroundColor3 = Color3.fromRGB(100,100,100)
-    btn.TextColor3 = Color3.fromRGB(255,255,255)
+    btn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.Text = text
-    btn.Font = Enum.Font.SourceSans
-    btn.TextSize = 16
+    btn.Font = Enum.Font.GothamMedium
+    btn.TextSize = 13
+    btn.AutoButtonColor = true
     btn.Parent = frame
+    styleElement(btn, 6, Color3.fromRGB(50, 50, 60))
     return btn
 end
 
--- Title
+-- Title Bar
 local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(0, 200, 0, 30)
-titleLabel.Position = UDim2.new(0, 10, 0, 10)
-titleLabel.BackgroundTransparency = 1
-titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.Text = "Aimlock + ESP Menu"
-titleLabel.Font = Enum.Font.SourceSansBold
-titleLabel.TextSize = 18
+titleLabel.Size = UDim2.new(1, 0, 0, 35)
+titleLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
+titleLabel.TextColor3 = Color3.fromRGB(0, 170, 255)
+titleLabel.Text = "  AIMLOCK + ADVANCED ESP"
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextSize = 14
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.Parent = frame
+styleElement(titleLabel, 8)
 
--- Buttons & Labels (Aimlock section)
-local toggleAimlockButton = createButton("Enable Aimlock", 50)
-local fovLabel = createLabel("FOV Size: " .. fovSize, 90)
+-- --- UI Elements Layout ---
+local toggleAimlockButton = createButton("Enable Aimlock: Off", 45)
+local fovLabel = createLabel("FOV Size: " .. fovSize, 80)
+
 local fovSlider = Instance.new("TextButton")
-fovSlider.Size = UDim2.new(0,200,0,20)
-fovSlider.Position = UDim2.new(0,10,0,110)
-fovSlider.BackgroundColor3 = Color3.fromRGB(100,100,100)
+fovSlider.Size = UDim2.new(0, 220, 0, 10)
+fovSlider.Position = UDim2.new(0, 10, 0, 100)
+fovSlider.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
 fovSlider.Text = ""
 fovSlider.Parent = frame
+styleElement(fovSlider, 4)
 
 local fovSliderIndicator = Instance.new("Frame")
-fovSliderIndicator.Size = UDim2.new(fovSize/200,0,1,0)
-fovSliderIndicator.BackgroundColor3 = Color3.fromRGB(180,180,180)
+fovSliderIndicator.Size = UDim2.new(fovSize/200, 0, 1, 0)
+fovSliderIndicator.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
 fovSliderIndicator.BorderSizePixel = 0
 fovSliderIndicator.Parent = fovSlider
+styleElement(fovSliderIndicator, 4)
 
-local aimSpeedLabel = createLabel("Aim Speed: " .. aimSpeed, 140)
+local aimSpeedLabel = createLabel("Aim Speed: " .. aimSpeed, 115)
 local aimSpeedSlider = Instance.new("TextButton")
-aimSpeedSlider.Size = UDim2.new(0,200,0,20)
-aimSpeedSlider.Position = UDim2.new(0,10,0,160)
-aimSpeedSlider.BackgroundColor3 = Color3.fromRGB(100,100,100)
+aimSpeedSlider.Size = UDim2.new(0, 220, 0, 10)
+aimSpeedSlider.Position = UDim2.new(0, 10, 0, 135)
+aimSpeedSlider.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
 aimSpeedSlider.Text = ""
 aimSpeedSlider.Parent = frame
+styleElement(aimSpeedSlider, 4)
 
 local aimSpeedSliderIndicator = Instance.new("Frame")
-aimSpeedSliderIndicator.Size = UDim2.new((aimSpeed-0.1)/0.9,0,1,0)
-aimSpeedSliderIndicator.BackgroundColor3 = Color3.fromRGB(180,180,180)
+aimSpeedSliderIndicator.Size = UDim2.new((aimSpeed-0.1)/0.9, 0, 1, 0)
+aimSpeedSliderIndicator.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
 aimSpeedSliderIndicator.BorderSizePixel = 0
 aimSpeedSliderIndicator.Parent = aimSpeedSlider
+styleElement(aimSpeedSliderIndicator, 4)
 
-local toggleFovButton = createButton("Show FOV Circle: Off", 190)
-local toggleWallCheckButton = createButton("Wall Check: Off", 230)
-local toggleTeamCheckButton = createButton("Team Check: Off", 270)
-local targetLabel = createLabel("Target Part: " .. targetPart, 310)
+local toggleFovButton = createButton("Show FOV Circle: Off", 155)
+local toggleWallCheckButton = createButton("Wall Check: Off", 190)
+local toggleTeamCheckButton = createButton("Team Check: Off", 225)
+local targetLabel = createLabel("Target Part: " .. targetPart, 260)
 
 local targetDropdownButton = Instance.new("TextButton")
-targetDropdownButton.Size = UDim2.new(0,200,0,25)
-targetDropdownButton.Position = UDim2.new(0,10,0,335)
-targetDropdownButton.BackgroundColor3 = Color3.fromRGB(100,100,100)
-targetDropdownButton.TextColor3 = Color3.fromRGB(255,255,255)
-targetDropdownButton.Text = "▼  Select Part"
+targetDropdownButton.Size = UDim2.new(0, 220, 0, 25)
+targetDropdownButton.Position = UDim2.new(0, 10, 0, 280)
+targetDropdownButton.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+targetDropdownButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+targetDropdownButton.Text = "▼ Select Part"
+targetDropdownButton.Font = Enum.Font.Gotham
+targetDropdownButton.TextSize = 12
 targetDropdownButton.Parent = frame
+styleElement(targetDropdownButton, 6, Color3.fromRGB(50, 50, 60))
 
--- Rainbow
-local toggleRainbowFOVButton = createButton("Rainbow FOV: Off", 370)
-local toggleRainbowTextButton = createButton("Rainbow Text: Off", 410)
+local toggleRainbowFOVButton = createButton("Rainbow FOV: Off", 315)
+local toggleRainbowTextButton = createButton("Rainbow Text: Off", 350)
 
--- ESP Section
-createLabel("──────── ESP Settings ────────", 445)
-local toggleESPButton = createButton("Enable ESP: Off", 465)
+-- UPGRADED ESP SECTION GUI
+createLabel("──────── ADVANCED ESP ────────", 390)
+local toggleESPButton = createButton("Enable ESP: Off", 410)
+local toggleChamsButton = createButton("ESP Chams (Glow): On", 445)
+local toggleTracersButton = createButton("ESP Tracers (Line): On", 480)
+local toggleTeamColorButton = createButton("Use Team Color: On", 515)
 
--- Dropdown options
-local dropdownOptions = {"Head", "UpperTorso", "HumanoidRootPart", "LowerTorso", "LeftUpperArm", "RightUpperArm", "LeftLowerArm", "RightLowerArm", "LeftUpperLeg", "RightUpperLeg", "LeftLowerLeg", "RightLowerLeg"}
+-- Dropdown Setup
+local dropdownOptions = {"Head", "UpperTorso", "HumanoidRootPart", "LowerTorso"}
 local dropdownFrame = nil
 
--- Dragging GUI
-local isDragging = false
-local dragStart, startPos
+-- Dragging Logic
+local isDragging, dragStart, startPos = false, nil, nil
 titleLabel.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         isDragging = true
@@ -158,39 +196,36 @@ titleLabel.InputBegan:Connect(function(input)
     end
 end)
 titleLabel.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        isDragging = false
-    end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then isDragging = false end
 end)
 UserInputService.InputChanged:Connect(function(input)
     if isDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
         local delta = input.Position - dragStart
-        frame.Position = UDim2.new(
-            startPos.X.Scale, startPos.X.Offset + delta.X,
-            startPos.Y.Scale, startPos.Y.Offset + delta.Y
-        )
+        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
 
--- Target Part Dropdown
+-- Dropdown Click
 targetDropdownButton.MouseButton1Click:Connect(function()
     if dropdownFrame then dropdownFrame:Destroy() dropdownFrame = nil return end
     dropdownFrame = Instance.new("Frame")
-    dropdownFrame.Size = UDim2.new(0,200,0,#dropdownOptions*25)
-    dropdownFrame.Position = UDim2.new(0,10,0,360)
-    dropdownFrame.BackgroundColor3 = Color3.fromRGB(80,80,80)
-    dropdownFrame.BorderSizePixel = 0
+    dropdownFrame.Size = UDim2.new(0, 220, 0, #dropdownOptions * 25)
+    dropdownFrame.Position = UDim2.new(0, 10, 0, 310)
+    dropdownFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+    dropdownFrame.ZIndex = 5
     dropdownFrame.Parent = frame
+    styleElement(dropdownFrame, 6, Color3.fromRGB(50, 50, 60))
 
     for i, opt in ipairs(dropdownOptions) do
         local btn = Instance.new("TextButton")
-        btn.Size = UDim2.new(1,0,0,25)
-        btn.Position = UDim2.new(0,0,0,(i-1)*25)
-        btn.BackgroundColor3 = Color3.fromRGB(100,100,100)
-        btn.TextColor3 = Color3.fromRGB(255,255,255)
+        btn.Size = UDim2.new(1, 0, 0, 25)
+        btn.Position = UDim2.new(0, 0, 0, (i-1) * 25)
+        btn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+        btn.TextColor3 = Color3.fromRGB(255, 255, 255)
         btn.Text = opt
-        btn.Font = Enum.Font.SourceSans
-        btn.TextSize = 14
+        btn.Font = Enum.Font.Gotham
+        btn.TextSize = 12
+        btn.ZIndex = 6
         btn.Parent = dropdownFrame
         btn.MouseButton1Click:Connect(function()
             targetPart = opt
@@ -204,82 +239,68 @@ end)
 -- FOV Circle
 local function createFovCircle()
     if fovGui then fovGui:Destroy() end
-    fovGui = Instance.new("ScreenGui")
-    fovGui.Parent = player:WaitForChild("PlayerGui")
+    fovGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
     fovGui.Name = "FOVCircleGui"
     fovGui.IgnoreGuiInset = true
-    fovGui.ResetOnSpawn = false
-
-    fovCircle = Instance.new("Frame")
-    fovCircle.Size = UDim2.new(0, fovSize*2, 0, fovSize*2)
-    fovCircle.Position = UDim2.new(0, mouse.X, 0, mouse.Y + yOffset)
+    
+    fovCircle = Instance.new("Frame", fovGui)
+    fovCircle.Size = UDim2.new(0, fovSize * 2, 0, fovSize * 2)
     fovCircle.AnchorPoint = Vector2.new(0.5, 0.5)
     fovCircle.BackgroundTransparency = 1
-    fovCircle.BorderSizePixel = 0
     fovCircle.Visible = showFovCircle
-    fovCircle.Parent = fovGui
 
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(1,0)
-    corner.Parent = fovCircle
+    local corner = Instance.new("UICorner", fovCircle)
+    corner.CornerRadius = UDim.new(1, 0)
 
-    local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(255,255,255)
-    stroke.Thickness = 2
-    stroke.Transparency = 0.3
-    stroke.Parent = fovCircle
+    local stroke = Instance.new("UIStroke", fovCircle)
+    stroke.Color = Color3.fromRGB(0, 170, 255)
+    stroke.Thickness = 1.5
+    stroke.Transparency = 0.4
 end
 
 local function updateFovCircle()
-    if fovCircle and fovGui then
-        fovCircle.Size = UDim2.new(0, fovSize*2, 0, fovSize*2)
+    if fovCircle then
+        fovCircle.Size = UDim2.new(0, fovSize * 2, 0, fovSize * 2)
         fovCircle.Position = UDim2.new(0, mouse.X, 0, mouse.Y + yOffset)
         fovCircle.Visible = showFovCircle
     end
 end
 
--- Aimlock Logic
+-- Aimlock Target Logic
 local function getTargetPart(character, partName)
     if not character then return nil end
-    return character:FindFirstChild(partName) or (partName == "Torso" and (character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso")))
+    return character:FindFirstChild(partName) or character:FindFirstChild("HumanoidRootPart")
 end
 
 local function getAimPosition(part)
-    if not part then return nil end
-    return part.Position + Vector3.new(0, part.Size.Y * 0.4, 0)   -- เล็งใกล้ ๆ กลาง-บน
+    return part and (part.Position + Vector3.new(0, part.Size.Y * 0.2, 0))
 end
+
+local rayParams = RaycastParams.new()
+rayParams.FilterType = Enum.RaycastFilterType.Blacklist
 
 local function aimlockFunction()
     if not isAimlockEnabled then return end
-
     local closest, shortest = nil, fovSize
     local mousePos = Vector2.new(mouse.X, mouse.Y + yOffset)
+    
+    if checkWalls and player.Character then rayParams.FilterDescendantsInstances = {player.Character} end
 
-    for _, p in pairs(Players:GetPlayers()) do
+    for _, p in ipairs(Players:GetPlayers()) do
         if p ~= player and p.Character and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
             local part = getTargetPart(p.Character, targetPart)
             if not part then continue end
 
-            local sameTeam = false
-            if checkTeam then
-                if player.Team and p.Team and player.Team == p.Team then sameTeam = true end
-                if player.TeamColor == p.TeamColor then sameTeam = true end
-            end
-            if sameTeam then continue end
+            if checkTeam and player.Team and p.Team and player.Team == p.Team then continue end
 
             local worldPos = getAimPosition(part)
             local screenPos, onScreen = camera:WorldToViewportPoint(worldPos)
             local dist = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
-
             local visible = true
+
             if checkWalls then
-                local rayParams = RaycastParams.new()
-                rayParams.FilterDescendantsInstances = {player.Character or {}}
-                rayParams.FilterType = Enum.RaycastFilterType.Blacklist
-                local result = workspace:Raycast(camera.CFrame.Position, (worldPos - camera.CFrame.Position).Unit * 2000, rayParams)
-                if result and not result.Instance:IsDescendantOf(p.Character) then
-                    visible = false
-                end
+                local res = workspace:Raycast(camera.CFrame.Position, (worldPos - camera.CFrame.Position).Unit * 2000, rayParams)
+                if res and not res.Instance:IsDescendantOf(p.Character) then visible = false end
             end
 
             if dist < shortest and onScreen and visible then
@@ -292,154 +313,161 @@ local function aimlockFunction()
     if closest then
         local part = getTargetPart(closest.Character, targetPart)
         if part then
-            local targetPos = getAimPosition(part)
-            local targetCF = CFrame.new(camera.CFrame.Position, targetPos)
-            camera.CFrame = camera.CFrame:Lerp(targetCF, aimSpeed)
+            camera.CFrame = camera.CFrame:Lerp(CFrame.new(camera.CFrame.Position, getAimPosition(part)), aimSpeed)
         end
     end
 end
 
--- ESP Function
+-- UPGRADED ESP SYSTEM
 local espObjects = {}
+local tracerGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+tracerGui.Name = "ESPTracers"
+
+local function getESPColor(plr)
+    if useTeamColor and plr.TeamColor then
+        return plr.TeamColor.Color
+    end
+    return espColor
+end
 
 local function createESP(plr)
     if espObjects[plr] then return end
-    local char = plr.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    local char = plr.Character or plr.CharacterAdded:Wait()
+    
+    -- 1. Modern Chams (Highlight)
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "ESPHighlight"
+    highlight.FillTransparency = 0.5
+    highlight.OutlineTransparency = 0.2
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    highlight.Parent = char
 
-    local box = Instance.new("BoxHandleAdornment")
-    box.Adornee = char
-    box.Size = char:GetExtentsSize() + Vector3.new(1,2,1)
-    box.Color3 = espColor
-    box.Transparency = 0.6
-    box.AlwaysOnTop = true
-    box.ZIndex = 10
-    box.Parent = char
+    -- 2. Modern Billboard Text Info
+    local boxGui = Instance.new("BillboardGui")
+    boxGui.Name = "ESPText"
+    boxGui.Size = UDim2.new(0, 200, 0, 50)
+    boxGui.AlwaysOnTop = true
+    boxGui.StudsOffset = Vector3.new(0, 3.5, 0)
+    boxGui.Parent = char
 
-    local nameTag = Instance.new("BillboardGui")
-    nameTag.Adornee = char:FindFirstChild("Head") or char.HumanoidRootPart
-    nameTag.Size = UDim2.new(0,200,0,50)
-    nameTag.StudsOffset = Vector3.new(0,3,0)
-    nameTag.AlwaysOnTop = true
-    nameTag.Parent = char
-
-    local nameLabel = Instance.new("TextLabel", nameTag)
-    nameLabel.Size = UDim2.new(1,0,0.4,0)
-    nameLabel.BackgroundTransparency = 1
-    nameLabel.TextColor3 = Color3.new(1,1,1)
-    nameLabel.TextStrokeTransparency = 0.4
-    nameLabel.TextStrokeColor3 = Color3.new(0,0,0)
-    nameLabel.Font = Enum.Font.SourceSansBold
-    nameLabel.TextSize = 14
-    nameLabel.Text = plr.Name
-
-    local infoLabel = Instance.new("TextLabel", nameTag)
-    infoLabel.Size = UDim2.new(1,0,0.3,0)
-    infoLabel.Position = UDim2.new(0,0,0.4,0)
+    local infoLabel = Instance.new("TextLabel", boxGui)
+    infoLabel.Size = UDim2.new(1, 0, 1, 0)
     infoLabel.BackgroundTransparency = 1
-    infoLabel.TextColor3 = Color3.new(1,0.9,0.5)
-    infoLabel.TextStrokeTransparency = 0.5
-    infoLabel.TextStrokeColor3 = Color3.new(0,0,0)
-    infoLabel.Font = Enum.Font.SourceSans
+    infoLabel.TextStrokeTransparency = 0.2
+    infoLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
+    infoLabel.Font = Enum.Font.GothamBold
     infoLabel.TextSize = 12
 
-    espObjects[plr] = {box = box, nameGui = nameTag, info = infoLabel}
+    -- 3. Modern Tracer (UI Frame Line)
+    local tracerFrame = Instance.new("Frame", tracerGui)
+    tracerFrame.AnchorPoint = Vector2.new(0.5, 0)
+    tracerFrame.BorderSizePixel = 0
+
+    espObjects[plr] = {highlight = highlight, boxGui = boxGui, label = infoLabel, tracer = tracerFrame}
 end
 
 local function updateESP()
     if not espEnabled then
         for _, data in pairs(espObjects) do
-            if data.box then data.box:Destroy() end
-            if data.nameGui then data.nameGui:Destroy() end
+            if data.highlight then data.highlight:Destroy() end
+            if data.boxGui then data.boxGui:Destroy() end
+            if data.tracer then data.tracer:Destroy() end
         end
-        espObjects = {}
+        table.clear(espObjects)
         return
     end
 
-    for _, plr in pairs(Players:GetPlayers()) do
-        if plr == player or not plr.Character then continue end
-        local hum = plr.Character:FindFirstChild("Humanoid")
-        if not hum or hum.Health <= 0 then
+    local screenCenterBottom = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y)
+
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr == player then continue end
+        local char = plr.Character
+        local hum = char and char:FindFirstChild("Humanoid")
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+
+        if not char or not hum or hum.Health <= 0 or not root then
             if espObjects[plr] then
-                if espObjects[plr].box then espObjects[plr].box:Destroy() end
-                if espObjects[plr].nameGui then espObjects[plr].nameGui:Destroy() end
+                if espObjects[plr].highlight then espObjects[plr].highlight:Destroy() end
+                if espObjects[plr].boxGui then espObjects[plr].boxGui:Destroy() end
+                if espObjects[plr].tracer then espObjects[plr].tracer:Destroy() end
                 espObjects[plr] = nil
             end
             continue
         end
 
-        if not espObjects[plr] then
-            createESP(plr)
+        if not espObjects[plr] then createESP(plr) end
+        local data = espObjects[plr]
+        local currentColor = getESPColor(plr)
+
+        -- Update Chams
+        if data.highlight then
+            data.highlight.Enabled = espChams
+            data.highlight.FillColor = currentColor
+            data.highlight.OutlineColor = currentColor
         end
 
-        local data = espObjects[plr]
-        if data.info and showName or showHealth or showDistance then
+        -- Update Text Text Info
+        if data.label then
             local text = ""
             if showName then text = text .. plr.Name .. "\n" end
-            if showHealth then text = text .. "HP: " .. math.floor(hum.Health) .. "/" .. hum.MaxHealth .. "\n" end
-            if showDistance then
-                local dist = (player.Character and player.Character:FindFirstChild("HumanoidRootPart")) and 
-                    (plr.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude or 0
-                text = text .. "Dist: " .. math.floor(dist) .. " studs"
+            if showHealth then text = text .. "HP: " .. math.floor(hum.Health) .. "/" .. hum.MaxHealth .. "  " end
+            if showDistance and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                local dist = (root.Position - player.Character.HumanoidRootPart.Position).Magnitude
+                text = text .. "[" .. math.floor(dist) .. "m]"
             end
-            data.info.Text = text
+            data.label.Text = text
+            data.label.TextColor3 = currentColor
+        end
+
+        -- Update Tracers (Line drawing via UI)
+        if data.tracer then
+            local screenPos, onScreen = camera:WorldToViewportPoint(root.Position)
+            if onScreen and espTracers then
+                local targetPos = Vector2.new(screenPos.X, screenPos.Y)
+                local distance = (targetPos - screenCenterBottom).Magnitude
+                local angle = math.atan2(targetPos.Y - screenCenterBottom.Y, targetPos.X - screenCenterBottom.X)
+
+                data.tracer.Visible = true
+                data.tracer.Size = UDim2.new(0, 1.5, 0, distance)
+                data.tracer.Position = UDim2.new(0, screenCenterBottom.X, 0, screenCenterBottom.Y)
+                data.tracer.Rotation = math.deg(angle) + 90
+                data.tracer.BackgroundColor3 = currentColor
+            else
+                data.tracer.Visible = false
+            end
         end
     end
 end
 
--- Button Events
+-- --- Button Events Updates ---
 toggleAimlockButton.MouseButton1Click:Connect(function()
     isAimlockEnabled = not isAimlockEnabled
-    toggleAimlockButton.Text = isAimlockEnabled and "Disable Aimlock" or "Enable Aimlock"
-    
+    toggleAimlockButton.Text = "Enable Aimlock: " .. (isAimlockEnabled and "On" or "Off")
     if isAimlockEnabled then
-        fovConnection = RunService.RenderStepped:Connect(updateFovCircle)
         aimlockConnection = RunService.RenderStepped:Connect(aimlockFunction)
-        if showFovCircle and not fovCircle then createFovCircle() end
     else
-        if fovConnection then fovConnection:Disconnect() fovConnection = nil end
         if aimlockConnection then aimlockConnection:Disconnect() aimlockConnection = nil end
-        if fovCircle then fovCircle.Visible = false end
     end
 end)
 
 toggleFovButton.MouseButton1Click:Connect(function()
     showFovCircle = not showFovCircle
     toggleFovButton.Text = "Show FOV Circle: " .. (showFovCircle and "On" or "Off")
-    if showFovCircle then
-        if not fovCircle then createFovCircle() end
-        fovCircle.Visible = true
-    else
-        if fovCircle then fovCircle.Visible = false end
-    end
+    if showFovCircle then createFovCircle() fovCircle.Visible = true else if fovCircle then fovCircle.Visible = false end end
 end)
 
-toggleWallCheckButton.MouseButton1Click:Connect(function()
-    checkWalls = not checkWalls
-    toggleWallCheckButton.Text = "Wall Check: " .. (checkWalls and "On" or "Off")
-end)
+toggleWallCheckButton.MouseButton1Click:Connect(function() checkWalls = not checkWalls toggleWallCheckButton.Text = "Wall Check: " .. (checkWalls and "On" or "Off") end)
+toggleTeamCheckButton.MouseButton1Click:Connect(function() checkTeam = not checkTeam toggleTeamCheckButton.Text = "Team Check: " .. (checkTeam and "On" or "Off") end)
+toggleRainbowFOVButton.MouseButton1Click:Connect(function() rainbowFOVEnabled = not rainbowFOVEnabled toggleRainbowFOVButton.Text = "Rainbow FOV: " .. (rainbowFOVEnabled and "On" or "Off") end)
+toggleRainbowTextButton.MouseButton1Click:Connect(function() rainbowTextEnabled = not rainbowTextEnabled toggleRainbowTextButton.Text = "Rainbow Text: " .. (rainbowTextEnabled and "On" or "Off") end)
 
-toggleTeamCheckButton.MouseButton1Click:Connect(function()
-    checkTeam = not checkTeam
-    toggleTeamCheckButton.Text = "Team Check: " .. (checkTeam and "On" or "Off")
-end)
+-- New ESP Toggles
+toggleESPButton.MouseButton1Click:Connect(function() espEnabled = not espEnabled toggleESPButton.Text = "Enable ESP: " .. (espEnabled and "On" or "Off") if not espEnabled then updateESP() end end)
+toggleChamsButton.MouseButton1Click:Connect(function() espChams = not espChams toggleChamsButton.Text = "ESP Chams (Glow): " .. (espChams and "On" or "Off") end)
+toggleTracersButton.MouseButton1Click:Connect(function() espTracers = not espTracers toggleTracersButton.Text = "ESP Tracers (Line): " .. (espTracers and "On" or "Off") end)
+toggleTeamColorButton.MouseButton1Click:Connect(function() useTeamColor = not useTeamColor toggleTeamColorButton.Text = "Use Team Color: " .. (useTeamColor and "On" or "Off") end)
 
-toggleRainbowFOVButton.MouseButton1Click:Connect(function()
-    rainbowFOVEnabled = not rainbowFOVEnabled
-    toggleRainbowFOVButton.Text = "Rainbow FOV: " .. (rainbowFOVEnabled and "On" or "Off")
-end)
-
-toggleRainbowTextButton.MouseButton1Click:Connect(function()
-    rainbowTextEnabled = not rainbowTextEnabled
-    toggleRainbowTextButton.Text = "Rainbow Text: " .. (rainbowTextEnabled and "On" or "Off")
-end)
-
-toggleESPButton.MouseButton1Click:Connect(function()
-    espEnabled = not espEnabled
-    toggleESPButton.Text = "Enable ESP: " .. (espEnabled and "On" or "Off")
-end)
-
--- Sliders
+-- Sliders Implementation
 fovSlider.MouseButton1Down:Connect(function()
     local conn = UserInputService.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement then
@@ -451,10 +479,7 @@ fovSlider.MouseButton1Down:Connect(function()
         end
     end)
     local endConn; endConn = UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            conn:Disconnect()
-            endConn:Disconnect()
-        end
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then conn:Disconnect() endConn:Disconnect() end
     end)
 end)
 
@@ -468,48 +493,34 @@ aimSpeedSlider.MouseButton1Down:Connect(function()
         end
     end)
     local endConn; endConn = UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            conn:Disconnect()
-            endConn:Disconnect()
-        end
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then conn:Disconnect() endConn:Disconnect() end
     end)
 end)
 
--- Rainbow + ESP loop
+-- Main Render Loop
 RunService.RenderStepped:Connect(function(dt)
-    rainbowHue = (rainbowHue + dt * 0.8) % 1
-
-    if rainbowFOVEnabled and fovCircle then
-        local stroke = fovCircle:FindFirstChildOfClass("UIStroke")
-        if stroke then stroke.Color = Color3.fromHSV(rainbowHue, 1, 1) end
-    end
-
-    if rainbowTextEnabled then
-        for _, obj in ipairs(frame:GetChildren()) do
-            if obj:IsA("TextLabel") or obj:IsA("TextButton") then
-                obj.TextColor3 = Color3.fromHSV(rainbowHue, 1, 1)
+    updateFovCircle()
+    
+    if rainbowFOVEnabled or rainbowTextEnabled then
+        rainbowHue = (rainbowHue + dt * 0.5) % 1
+        local rColor = Color3.fromHSV(rainbowHue, 1, 1)
+        if rainbowFOVEnabled and fovCircle then fovCircle:FindFirstChildOfClass("UIStroke").Color = rColor end
+        if rainbowTextEnabled then
+            for _, obj in ipairs(frame:GetChildren()) do
+                if obj:IsA("TextLabel") or (obj:IsA("TextButton") and obj ~= titleLabel) then obj.TextColor3 = rColor end
             end
         end
     end
 
-    if espEnabled then
-        updateESP()
-    end
+    updateESP()
 end)
 
--- Toggle GUI with L + LeftAlt
+-- Toggle Menu with L + LeftAlt
 UserInputService.InputBegan:Connect(function(input, gpe)
     if gpe then return end
     if input.KeyCode == Enum.KeyCode.L and UserInputService:IsKeyDown(Enum.KeyCode.LeftAlt) then
         screenGui.Enabled = not screenGui.Enabled
-        print("Aimlock + ESP GUI:", screenGui.Enabled and "เปิดแล้ว 🟢" or "ซ่อนแล้ว 🔴")
     end
 end)
 
-print("Aimlock +  Script loaded!")
-
-
---[[
-by Noxia :discord name"xdct"
-อยากอ่าน Dm มา
-]]--
+print("Aimlock Loaded!")
