@@ -1,8 +1,8 @@
 --[[
     UNIVERSAL PRO SCRIPT
-    Version: 3.8 (Zero Delay + Silent Aim + ESP Pro + Bullet Teleport + Combat/AutoFarm)
-    UI: Obsidian (Deividcomsono - LinoriaLib Style)
-    Save/Load: PasteWare-style (SaveManager + ThemeManager)
+    Version: 0.077
+    UI: Obsidian 
+    Save/Load:
     Language: English
 ]]
 
@@ -140,7 +140,7 @@ local ESP_Objects = {}
 --// ==================================================
 --// 3. SILENT AIM FUNCTIONS (WITH BULLET TELEPORT)
 --// ==================================================
--- (ฟังก์ชันพื้นฐานทั้งหมดจาก Source เดิม)
+
 
 local function CreateHighlight(target)
     if not target or not target:IsA("Model") then return nil end
@@ -1110,7 +1110,7 @@ local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))
 local SaveManager  = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
 
 local Window = Library:CreateWindow({
-    Title        = 'Universal Pro v3.8  |  Silent Aim + ESP + Combat',
+    Title        = 'super box ',
     Center       = true,
     AutoShow     = true,
     TabPadding   = 8,
