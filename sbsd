@@ -1,8 +1,7 @@
 --[[
-    UNIVERSAL PRO SCRIPT
-    Version: 4.8 (Safe Mode: Fixed Instant Break/Gun Bug + AutoFarm + Lobby)
+    L SCRIPT
+    Version: V.7
     UI: Obsidian (Deividcomsono)
-    Save/Load: PasteWare-style (SaveManager + ThemeManager)
     Language: English
 ]]
 
@@ -64,6 +63,24 @@ getgenv().ESP_Config = {
     StickColor       = Color3.fromRGB(255, 255, 255)
 }
 
+
+-- B-Anti-Cheat
+task.spawn(function()
+    for k, v in pairs(getgc(true)) do
+        if pcall(function() return rawget(v, "indexInstance") end)
+            and type(rawget(v, "indexInstance")) == "table"
+            and (rawget(v, "indexInstance"))[1] == "kick"
+        then
+            setreadonly(v, false)
+            v.tvk = {
+                "kick",
+                function() return game.Workspace:WaitForChild("") end
+            }
+        end
+    end
+end)
+
+
 -- [MAIN / COMBAT SETTINGS]
 local AutoAttackEnabled = false
 local AutoTPEnabled = false
@@ -71,23 +88,6 @@ local AutoSkillEnabled = false
 local SelectedSkills = {"F"}
 local AutoSpecialEnabled = false
 local SelectedSpecialModes = {"Normal"}
-
--- [MAP & MODE SETTINGS]
-local AutoMapEnabled = false
-local SelectedMap = "Classy"
-local AutoModeEnabled = false
-local SelectedMode = "Death Mode"
-
-local MapList = {"Classy", "Sand", "Story", "bp", "defauly", "fa", "glass"}
-local ModeMappings = {
-    ["Death Mode"] = "wh",
-    ["Siege mode"] = "truestart",
-    ["Hard mode"] = "what",
-    ["Endless Mode"] = "start",
-    ["Hard Endless Mode"] = "deadly",
-    ["Nightmare mode"] = "nightmare"
-}
-local ModeList = {"Death Mode", "Siege mode", "Hard mode", "Endless Mode", "Hard Endless Mode", "Nightmare mode"}
 
 --// ==================================================
 --// 2. SERVICES & VARIABLES
@@ -1129,7 +1129,7 @@ local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))
 local SaveManager  = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
 
 local Window = Library:CreateWindow({
-    Title        = 'Universal Pro v4.8  |  Full Script Edition',
+    Title        = 'Sbsd Pro v.7|beta',
     Center       = true,
     AutoShow     = true,
     TabPadding   = 8,
@@ -1299,83 +1299,7 @@ MainCombatBox:AddDropdown('SpecialModeDrop', {
     end
 })
 
-local MainMapBox = Tabs.Main:AddRightGroupbox('Auto Select Map & Mode')
-
-MainMapBox:AddDropdown('MapSelector', {
-    Values = MapList,
-    Default = 1,
-    Multi = false,
-    Text = 'Select Map',
-    Callback = function(Value) SelectedMap = Value end
-})
-
-MainMapBox:AddToggle('AutoMapToggle', {
-    Text = 'Auto Enter Map',
-    Default = false,
-    Callback = function(Value)
-        AutoMapEnabled = Value
-        task.spawn(function()
-            while AutoMapEnabled do
-                pcall(function()
-                    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                    local lobby = workspace:FindFirstChild("lobby")
-                    if lobby and lobby:FindFirstChild("btns") and hrp then
-                        local btn = lobby.btns:FindFirstChild(SelectedMap)
-                        if btn then
-                            hrp.CFrame = btn.CFrame
-                            task.wait(0.5)
-                            local prompt = btn:FindFirstChildOfClass("ProximityPrompt")
-                            if prompt then FirePrompt(prompt) end
-                        end
-                    end
-                end)
-                task.wait(10)
-            end
-        end)
-    end
-})
-
-MainMapBox:AddDivider()
-
-MainMapBox:AddDropdown('ModeSelector', {
-    Values = ModeList,
-    Default = 1,
-    Multi = false,
-    Text = 'Select Mode',
-    Callback = function(Value) SelectedMode = Value end
-})
-
-MainMapBox:AddToggle('AutoModeToggle', {
-    Text = 'Auto Select Mode',
-    Default = false,
-    Callback = function(Value)
-        if Value and not AutoMapEnabled then
-            Library:Notify("Please enable 'Auto Enter Map' first!", 3)
-            Toggles.AutoModeToggle:SetValue(false)
-            return
-        end
-
-        AutoModeEnabled = Value
-        task.spawn(function()
-            while AutoModeEnabled do
-                pcall(function()
-                    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                    local targetModeName = ModeMappings[SelectedMode]
-                    local modePart = workspace:FindFirstChild(targetModeName, true)
-                    if modePart and hrp then
-                        hrp.CFrame = modePart.CFrame
-                        task.wait(0.5)
-                        local prompt = modePart:FindFirstChildOfClass("ProximityPrompt")
-                        if prompt then FirePrompt(prompt) end
-                    end
-                end)
-                task.wait(10)
-            end
-        end)
-    end
-})
-
-MainMapBox:AddLabel("- wh = Death Mode\n- truestart = Siege mode\n- what = Hard mode\n- start = Endless Mode\n- deadly = Hard Endless Mode\n- nightmare = Nightmare mode")
+-- (AUTO MAP AND AUTO MODE HAVE BEEN REMOVED HERE)
 
 --// ==================================================
 --// [ TAB 2: SILENT AIM ]
@@ -1605,18 +1529,18 @@ ESPMainBox:AddToggle('ESPTeamColor', {
 })
 
 local ESPElemsBox = Tabs.ESP:AddLeftGroupbox('Visual Elements')
-ESPElemsBox:AddToggle('EBox',   { Text = 'Show Box',            Default = true,  Callback = function(Value) ESP_Config.ShowBox          = Value end })
-ESPElemsBox:AddToggle('ELine',  { Text = 'Show Line',           Default = true,  Callback = function(Value) ESP_Config.ShowLine         = Value end })
-ESPElemsBox:AddToggle('EStick', { Text = 'Show Stick',          Default = true,  Callback = function(Value) ESP_Config.ShowStick        = Value end })
-ESPElemsBox:AddToggle('EName',  { Text = 'Show Name',           Default = true,  Callback = function(Value) ESP_Config.ShowName         = Value end })
-ESPElemsBox:AddToggle('EDist',  { Text = 'Show Distance',       Default = true,  Callback = function(Value) ESP_Config.ShowDistance     = Value end })
-ESPElemsBox:AddToggle('EHP',    { Text = 'Show HP Bar',         Default = true,  Callback = function(Value) ESP_Config.ShowHPBar        = Value end })
-ESPElemsBox:AddToggle('EEquip', { Text = 'Show Equipped Item',  Default = true,  Callback = function(Value) ESP_Config.ShowEquippedItem = Value end })
+ESPElemsBox:AddToggle('EBox',   { Text = 'Show Box',             Default = true,  Callback = function(Value) ESP_Config.ShowBox          = Value end })
+ESPElemsBox:AddToggle('ELine',  { Text = 'Show Line',            Default = true,  Callback = function(Value) ESP_Config.ShowLine         = Value end })
+ESPElemsBox:AddToggle('EStick', { Text = 'Show Stick',           Default = true,  Callback = function(Value) ESP_Config.ShowStick        = Value end })
+ESPElemsBox:AddToggle('EName',  { Text = 'Show Name',            Default = true,  Callback = function(Value) ESP_Config.ShowName         = Value end })
+ESPElemsBox:AddToggle('EDist',  { Text = 'Show Distance',        Default = true,  Callback = function(Value) ESP_Config.ShowDistance     = Value end })
+ESPElemsBox:AddToggle('EHP',    { Text = 'Show HP Bar',          Default = true,  Callback = function(Value) ESP_Config.ShowHPBar        = Value end })
+ESPElemsBox:AddToggle('EEquip', { Text = 'Show Equipped Item',   Default = true,  Callback = function(Value) ESP_Config.ShowEquippedItem = Value end })
 ESPElemsBox:AddToggle('EInv',   { Text = 'Show Full Inventory', Default = false, Callback = function(Value) ESP_Config.ShowInventory    = Value end })
 
 local ESPSizesBox = Tabs.ESP:AddRightGroupbox('Sizes & Distance')
-ESPSizesBox:AddSlider('ESPMaxDist', { Text = 'Max Distance',      Default = 2500, Min = 500,  Max = 5000, Rounding = 0, Compact = false, Callback = function(Value) ESP_Config.MaxDistance      = Value end })
-ESPSizesBox:AddSlider('ESPNameS',   { Text = 'Name Text Size',    Default = 16,   Min = 8,    Max = 30,   Rounding = 0, Compact = true,  Callback = function(Value) ESP_Config.NameTextSize     = Value end })
+ESPSizesBox:AddSlider('ESPMaxDist', { Text = 'Max Distance',      Default = 2500, Min = 500,  Max = 5000, Rounding = 0, Compact = false, Callback = function(Value) ESP_Config.MaxDistance       = Value end })
+ESPSizesBox:AddSlider('ESPNameS',   { Text = 'Name Text Size',    Default = 16,   Min = 8,    Max = 30,   Rounding = 0, Compact = true,  Callback = function(Value) ESP_Config.NameTextSize      = Value end })
 ESPSizesBox:AddSlider('ESPDistS',   { Text = 'Distance Text Size',Default = 14,   Min = 8,    Max = 30,   Rounding = 0, Compact = true,  Callback = function(Value) ESP_Config.DistanceTextSize = Value end })
 ESPSizesBox:AddSlider('ESPInvS',    { Text = 'Inventory Text Size',Default = 13,  Min = 8,    Max = 30,   Rounding = 0, Compact = true,  Callback = function(Value) ESP_Config.InventoryTextSize= Value end })
 
@@ -1630,7 +1554,7 @@ ESPColorsBox:AddLabel('Stick Color'):AddColorPicker('CStick', { Default = Color3
 --// [ TAB 4: SETTINGS ]
 --// ==================================================
 
-Library:SetWatermark('Universal Pro v4.8')
+Library:SetWatermark('sbsd Pro V.7')
 Library.KeybindFrame.Visible = false
 
 local GeneralGroup = Tabs.Settings:AddLeftGroupbox('General Options')
@@ -1640,8 +1564,6 @@ GeneralGroup:AddButton('Disable All Functions (Panic)', function()
     if Toggles.AutoTPToggle then Toggles.AutoTPToggle:SetValue(false) end
     if Toggles.AutoSkillToggle then Toggles.AutoSkillToggle:SetValue(false) end
     if Toggles.AutoSpecialToggle then Toggles.AutoSpecialToggle:SetValue(false) end
-    if Toggles.AutoMapToggle then Toggles.AutoMapToggle:SetValue(false) end
-    if Toggles.AutoModeToggle then Toggles.AutoModeToggle:SetValue(false) end
     if Toggles.ToggleSilentAim then Toggles.ToggleSilentAim:SetValue(false) end
     if Toggles.ToggleBulletTP then Toggles.ToggleBulletTP:SetValue(false) end
     if Toggles.ToggleESP then Toggles.ToggleESP:SetValue(false) end
@@ -1666,8 +1588,8 @@ SaveManager:SetLibrary(Library)
 SaveManager:IgnoreThemeSettings()
 SaveManager:SetIgnoreIndexes({ 'MenuKeybind' })
 
-ThemeManager:SetFolder('UniversalPro')
-SaveManager:SetFolder('UniversalPro/configs')
+ThemeManager:SetFolder('sbsd')
+SaveManager:SetFolder('sbsd/configs')
 
 -- Builds the Config and Theme sections inside the Settings tab
 SaveManager:BuildConfigSection(Tabs.Settings)
@@ -1681,7 +1603,7 @@ ThemeManager:LoadDefaultTheme()
 -- ------------------------------------------------
 
 -- Initial Notification
-Library:Notify('Universal Pro v4.8 Loaded (Safe Mode)', 5)
+Library:Notify('sbsd v4.8', 5)
 
 --// ==================================================
 --// PATCH: BULLET TELEPORT ANTI-DEATH PROTECTION
